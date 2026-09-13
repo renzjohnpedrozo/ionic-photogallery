@@ -90,15 +90,37 @@ const savePhotos = () => {
 const takePhoto = async () => {
   errorMessage.value = '';
 
+  console.log('TAKE PHOTO BUTTON CLICKED');
+
   try {
+    console.log(
+      'Is native:',
+      Capacitor.isNativePlatform()
+    );
+
     if (Capacitor.isNativePlatform()) {
+      console.log('Checking camera permission...');
 
       const permission =
         await Camera.checkPermissions();
 
+      console.log(
+        'Camera permission:',
+        permission.camera
+      );
+
       if (permission.camera !== 'granted') {
+        console.log(
+          'Requesting camera permission...'
+        );
+
         const requested =
           await Camera.requestPermissions();
+
+        console.log(
+          'Requested permission:',
+          requested.camera
+        );
 
         if (requested.camera !== 'granted') {
           errorMessage.value =
@@ -106,99 +128,29 @@ const takePhoto = async () => {
           return;
         }
       }
-
-      const image = await Camera.getPhoto({
-        quality: 90,
-        allowEditing: false,
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Camera
-      });
-
-      if (image.dataUrl) {
-        photos.value.push(image.dataUrl);
-        savePhotos();
-      }
-
-      return;
     }
 
-    if (
-      !navigator.mediaDevices ||
-      !navigator.mediaDevices.getUserMedia
-    ) {
-      errorMessage.value =
-        'Camera is not supported by this browser.';
-      return;
-    }
+    console.log('Opening camera...');
 
-    const stream =
-      await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: {
-            ideal: 'environment'
-          }
-        },
-        audio: false
-      });
-
-    const video = document.createElement('video');
-
-    video.srcObject = stream;
-    video.autoplay = true;
-    video.playsInline = true;
-
-    await video.play();
-
-    const canvas =
-      document.createElement('canvas');
-
-    await new Promise<void>((resolve) => {
-      video.onloadedmetadata = () => {
-        resolve();
-      };
+    const image = await Camera.getPhoto({
+      quality: 90,
+      allowEditing: false,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Camera
     });
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    console.log('Camera returned:', image);
 
-    const context =
-      canvas.getContext('2d');
-
-    if (!context) {
-      stream
-        .getTracks()
-        .forEach(track => track.stop());
-
-      errorMessage.value =
-        'Unable to capture photo.';
-
-      return;
+    if (image.dataUrl) {
+      photos.value.push(image.dataUrl);
+      savePhotos();
     }
 
-    context.drawImage(
-      video,
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
-
-    const photoData =
-      canvas.toDataURL(
-        'image/jpeg',
-        0.9
-      );
-
-    photos.value.push(photoData);
-
-    savePhotos();
-
-    stream
-      .getTracks()
-      .forEach(track => track.stop());
-
   } catch (error) {
-    console.error('Camera Error:', error);
+    console.error(
+      'CAMERA ERROR:',
+      error
+    );
 
     errorMessage.value =
       'Unable to access camera. Please allow camera permission.';
