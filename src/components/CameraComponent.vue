@@ -14,28 +14,12 @@
         <p>{{ errorMessage }}</p>
       </ion-text>
 
-      <ion-grid v-if="photos.length > 0">
-        <ion-row>
-          <ion-col
-            size="6"
-            size-md="4"
-            v-for="(photo, index) in photos"
-            :key="index"
-          >
-            <ion-img :src="photo"></ion-img>
-          </ion-col>
-        </ion-row>
-      </ion-grid>
-
-      <ion-text v-else color="medium">
-        <p>No photos yet.</p>
-      </ion-text>
     </ion-card-content>
   </ion-card>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 
 import {
   IonCard,
@@ -44,11 +28,7 @@ import {
   IonCardContent,
   IonButton,
   IonIcon,
-  IonText,
-  IonGrid,
-  IonRow,
-  IonCol,
-  IonImg
+  IonText
 } from '@ionic/vue';
 
 import { camera as cameraIcon } from 'ionicons/icons';
@@ -61,25 +41,24 @@ import {
 
 import { Capacitor } from '@capacitor/core';
 
-const photos = ref<string[]>([]);
 const errorMessage = ref('');
 
-onMounted(() => {
+const savePhoto = (photo: string) => {
   const savedPhotos = localStorage.getItem('photos');
+  let photos: string[] = [];
 
   if (savedPhotos) {
     try {
-      photos.value = JSON.parse(savedPhotos);
+      photos = JSON.parse(savedPhotos);
     } catch {
-      photos.value = [];
+      photos = [];
     }
   }
-});
 
-const savePhotos = () => {
+  photos.push(photo);
   localStorage.setItem(
     'photos',
-    JSON.stringify(photos.value)
+    JSON.stringify(photos)
   );
 
   window.dispatchEvent(
@@ -142,8 +121,7 @@ const takePhoto = async () => {
     console.log('Camera returned:', image);
 
     if (image.dataUrl) {
-      photos.value.push(image.dataUrl);
-      savePhotos();
+        savePhoto(image.dataUrl);
     }
 
   } catch (error) {
