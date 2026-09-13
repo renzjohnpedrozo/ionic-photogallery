@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 
 import {
   IonCard,
@@ -71,6 +71,33 @@ import { Capacitor } from '@capacitor/core';
 const photos = ref<string[]>([]);
 const errorMessage = ref('');
 
+/* =========================
+   LOAD SAVED PHOTOS
+========================= */
+onMounted(() => {
+  const savedPhotos = localStorage.getItem('photos');
+
+  if (savedPhotos) {
+    photos.value = JSON.parse(savedPhotos);
+  }
+});
+
+/* =========================
+   SAVE PHOTOS
+========================= */
+const savePhotos = () => {
+  localStorage.setItem(
+    'photos',
+    JSON.stringify(photos.value)
+  );
+
+  // Tell PhotoGalleryComponent that photos were updated
+  window.dispatchEvent(new Event('photos-updated'));
+};
+
+/* =========================
+   TAKE PHOTO
+========================= */
 const takePhoto = async () => {
   errorMessage.value = '';
 
@@ -90,6 +117,9 @@ const takePhoto = async () => {
 
       if (image.dataUrl) {
         photos.value.push(image.dataUrl);
+
+        // Save to localStorage
+        savePhotos();
       }
 
       return;
@@ -104,17 +134,19 @@ const takePhoto = async () => {
     ) {
       errorMessage.value =
         'Camera is not supported by this browser.';
+
       return;
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: {
-          ideal: 'environment'
-        }
-      },
-      audio: false
-    });
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: {
+            ideal: 'environment'
+          }
+        },
+        audio: false
+      });
 
     const video = document.createElement('video');
 
@@ -138,7 +170,10 @@ const takePhoto = async () => {
     const context = canvas.getContext('2d');
 
     if (!context) {
-      stream.getTracks().forEach(track => track.stop());
+
+      stream
+        .getTracks()
+        .forEach(track => track.stop());
 
       errorMessage.value =
         'Unable to capture photo.';
@@ -161,8 +196,13 @@ const takePhoto = async () => {
 
     photos.value.push(photoData);
 
+    // Save to localStorage
+    savePhotos();
+
     // Stop camera
-    stream.getTracks().forEach(track => track.stop());
+    stream
+      .getTracks()
+      .forEach(track => track.stop());
 
   } catch (error) {
 

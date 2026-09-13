@@ -1,3 +1,4 @@
+```vue
 <template>
   <ion-card>
     <ion-card-header>
@@ -5,36 +6,92 @@
     </ion-card-header>
 
     <ion-card-content>
-      <div v-if="photos.length === 0" class="empty-gallery">
+
+      <div
+        v-if="photos.length === 0"
+        class="empty-gallery"
+      >
         <p>No photos yet.</p>
       </div>
 
-      <div v-else class="photo-grid">
+      <div
+        v-else
+        class="photo-grid"
+      >
         <div
           v-for="(photo, index) in photos"
           :key="index"
           class="photo-item"
         >
-          <img :src="photo" alt="Captured photo" />
+          <img
+            :src="photo"
+            alt="Captured photo"
+          />
         </div>
       </div>
+
     </ion-card-content>
   </ion-card>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue'
-import { IonCard, IonCardHeader, IonCardTitle, IonCardContent } from '@ionic/vue'
+<script setup lang="ts">
+import {
+  ref,
+  onMounted,
+  onUnmounted
+} from 'vue';
 
-const photos = ref([])
+import {
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent
+} from '@ionic/vue';
 
-onMounted(() => {
-  const savedPhotos = localStorage.getItem('photos')
+const photos = ref<string[]>([]);
+
+/* =========================
+   LOAD PHOTOS
+========================= */
+const loadPhotos = () => {
+
+  const savedPhotos =
+    localStorage.getItem('photos');
 
   if (savedPhotos) {
-    photos.value = JSON.parse(savedPhotos)
+
+    photos.value =
+      JSON.parse(savedPhotos);
+
+  } else {
+
+    photos.value = [];
   }
-})
+};
+
+/* =========================
+   WHEN COMPONENT LOADS
+========================= */
+onMounted(() => {
+
+  loadPhotos();
+
+  window.addEventListener(
+    'photos-updated',
+    loadPhotos
+  );
+});
+
+/* =========================
+   WHEN COMPONENT IS REMOVED
+========================= */
+onUnmounted(() => {
+
+  window.removeEventListener(
+    'photos-updated',
+    loadPhotos
+  );
+});
 </script>
 
 <style scoped>
@@ -57,3 +114,4 @@ onMounted(() => {
   border-radius: 10px;
 }
 </style>
+```

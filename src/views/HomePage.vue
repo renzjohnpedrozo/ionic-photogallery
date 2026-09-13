@@ -1,3 +1,4 @@
+```vue
 <template>
   <IonPage>
     <IonContent :fullscreen="true">
@@ -35,8 +36,8 @@ import {
 } from '@ionic/vue';
 
 import CameraComponent from '@/components/CameraComponent.vue';
-// @ts-expect-error Vue SFC module is resolved at build time.
 import PhotoGalleryComponent from '../components/PhotoGalleryComponent.vue';
+
 </script>
 
 <style scoped>
@@ -87,3 +88,4 @@ ion-content {
 }
 
 </style>
+```
