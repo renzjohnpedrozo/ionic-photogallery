@@ -7,6 +7,7 @@
 
     <ion-card-content>
 
+      <!-- NO PHOTOS -->
       <div
         v-if="photos.length === 0"
         class="empty-gallery"
@@ -14,6 +15,7 @@
         <p>No photos yet.</p>
       </div>
 
+      <!-- PHOTO GALLERY -->
       <div
         v-else
         class="photo-grid"
@@ -35,6 +37,7 @@
 </template>
 
 <script setup lang="ts">
+
 import {
   ref,
   onMounted,
@@ -51,7 +54,7 @@ import {
 const photos = ref<string[]>([]);
 
 /* =========================
-   LOAD PHOTOS
+   LOAD SAVED PHOTOS
 ========================= */
 const loadPhotos = () => {
 
@@ -60,8 +63,20 @@ const loadPhotos = () => {
 
   if (savedPhotos) {
 
-    photos.value =
-      JSON.parse(savedPhotos);
+    try {
+
+      photos.value =
+        JSON.parse(savedPhotos);
+
+    } catch (error) {
+
+      console.error(
+        'Unable to load photos:',
+        error
+      );
+
+      photos.value = [];
+    }
 
   } else {
 
@@ -74,8 +89,10 @@ const loadPhotos = () => {
 ========================= */
 onMounted(() => {
 
+  // Load existing photos
   loadPhotos();
 
+  // Listen for new photos
   window.addEventListener(
     'photos-updated',
     loadPhotos
@@ -92,9 +109,11 @@ onUnmounted(() => {
     loadPhotos
   );
 });
+
 </script>
 
 <style scoped>
+
 .empty-gallery {
   text-align: center;
   padding: 30px 10px;
@@ -112,6 +131,8 @@ onUnmounted(() => {
   height: 150px;
   object-fit: cover;
   border-radius: 10px;
+  display: block;
 }
+
 </style>
 ```

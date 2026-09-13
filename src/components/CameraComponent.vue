@@ -1,24 +1,19 @@
-```vue
 <template>
   <ion-card>
     <ion-card-header>
-      <ion-card-title>Photo Gallery</ion-card-title>
+      <ion-card-title>Camera</ion-card-title>
     </ion-card-header>
 
     <ion-card-content>
-
-      <!-- TAKE PHOTO BUTTON -->
       <ion-button expand="block" @click="takePhoto">
         <ion-icon slot="start" :icon="cameraIcon"></ion-icon>
         Take Photo
       </ion-button>
 
-      <!-- ERROR MESSAGE -->
       <ion-text v-if="errorMessage" color="danger">
         <p>{{ errorMessage }}</p>
       </ion-text>
 
-      <!-- PHOTO GALLERY -->
       <ion-grid v-if="photos.length > 0">
         <ion-row>
           <ion-col
@@ -32,11 +27,9 @@
         </ion-row>
       </ion-grid>
 
-      <!-- NO PHOTOS -->
       <ion-text v-else color="medium">
         <p>No photos yet.</p>
       </ion-text>
-
     </ion-card-content>
   </ion-card>
 </template>
@@ -71,42 +64,48 @@ import { Capacitor } from '@capacitor/core';
 const photos = ref<string[]>([]);
 const errorMessage = ref('');
 
-/* =========================
-   LOAD SAVED PHOTOS
-========================= */
 onMounted(() => {
   const savedPhotos = localStorage.getItem('photos');
 
   if (savedPhotos) {
-    photos.value = JSON.parse(savedPhotos);
+    try {
+      photos.value = JSON.parse(savedPhotos);
+    } catch {
+      photos.value = [];
+    }
   }
 });
 
-/* =========================
-   SAVE PHOTOS
-========================= */
 const savePhotos = () => {
   localStorage.setItem(
     'photos',
     JSON.stringify(photos.value)
   );
 
-  // Tell PhotoGalleryComponent that photos were updated
-  window.dispatchEvent(new Event('photos-updated'));
+  window.dispatchEvent(
+    new Event('photos-updated')
+  );
 };
 
-/* =========================
-   TAKE PHOTO
-========================= */
 const takePhoto = async () => {
   errorMessage.value = '';
 
   try {
-
-    // =========================
-    // ANDROID / IOS
-    // =========================
     if (Capacitor.isNativePlatform()) {
+
+      const permission =
+        await Camera.checkPermissions();
+
+      if (permission.camera !== 'granted') {
+        const requested =
+          await Camera.requestPermissions();
+
+        if (requested.camera !== 'granted') {
+          errorMessage.value =
+            'Camera permission was denied.';
+          return;
+        }
+      }
 
       const image = await Camera.getPhoto({
         quality: 90,
@@ -117,24 +116,18 @@ const takePhoto = async () => {
 
       if (image.dataUrl) {
         photos.value.push(image.dataUrl);
-
-        // Save to localStorage
         savePhotos();
       }
 
       return;
     }
 
-    // =========================
-    // BROWSER / IONIC SERVE
-    // =========================
     if (
       !navigator.mediaDevices ||
       !navigator.mediaDevices.getUserMedia
     ) {
       errorMessage.value =
         'Camera is not supported by this browser.';
-
       return;
     }
 
@@ -156,7 +149,8 @@ const takePhoto = async () => {
 
     await video.play();
 
-    const canvas = document.createElement('canvas');
+    const canvas =
+      document.createElement('canvas');
 
     await new Promise<void>((resolve) => {
       video.onloadedmetadata = () => {
@@ -167,10 +161,10 @@ const takePhoto = async () => {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    const context = canvas.getContext('2d');
+    const context =
+      canvas.getContext('2d');
 
     if (!context) {
-
       stream
         .getTracks()
         .forEach(track => track.stop());
@@ -189,23 +183,21 @@ const takePhoto = async () => {
       canvas.height
     );
 
-    const photoData = canvas.toDataURL(
-      'image/jpeg',
-      0.9
-    );
+    const photoData =
+      canvas.toDataURL(
+        'image/jpeg',
+        0.9
+      );
 
     photos.value.push(photoData);
 
-    // Save to localStorage
     savePhotos();
 
-    // Stop camera
     stream
       .getTracks()
       .forEach(track => track.stop());
 
   } catch (error) {
-
     console.error('Camera Error:', error);
 
     errorMessage.value =
@@ -213,4 +205,3 @@ const takePhoto = async () => {
   }
 };
 </script>
-```
